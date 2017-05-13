@@ -13,7 +13,7 @@ struct json{
 };
 
 #define T json_T
-#define INITIAL 16
+#define INITIAL 256
 #define INCR 1.5
 
 /* Class Methods */

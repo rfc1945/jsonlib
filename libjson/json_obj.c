@@ -9,6 +9,8 @@ typedef struct llst *llst_T;
 struct json{
     int type;
     json_C class;
+    llst_T  inorder;
+    llst_T *inorder_tail;
     size_t have, sz;
     llst_T hashtab[];
 };
@@ -44,6 +46,7 @@ JSON_OBJ_T=
 struct llst{
     const char *key;
     json_T value;
+    llst_T next_inorder;
     llst_T next;
 };
 
@@ -52,7 +55,7 @@ struct llst{
 static T new_obj(void){
     json_T res=EMALLOC(sizeof(*res)+sizeof(llst_T)*INITIAL);
     if(!res) return NULL;
-    *res=(struct json){JSON_OBJ,&JSON_OBJ_T,0,INITIAL};
+    *res=(struct json){JSON_OBJ,&JSON_OBJ_T,NULL,&res->inorder,0,INITIAL};
     for(size_t i=0; i<INITIAL ; i++)
         res->hashtab[i]=NULL;
     return res;
@@ -106,19 +109,13 @@ skip_loop:
 }
 
 static int fprint_obj(FILE *to,T this){
-   putchar('{');
-   size_t sz=this->sz;
-   for(size_t i=0; i<sz ;i++){
-        llst_T j=this->hashtab[i];
-        if(!j) continue;
-        for(; j ; j=j->next){
-            fprintf(to,"\"%s\"",j->key);
-            fputc(':',to);
-            json_fprint(to,j->value);
-            fputc(' ',to);
-        }
+   fputc('{',to);
+   for(llst_T i=this->inorder; i ; i=i->next_inorder){
+       fprintf(to,"\"%s\":",i->key);
+       json_fprint(to,i->value);
+       if(i->next_inorder) fputc(',',to);
    }
-   putchar('}');
+   fputc('}',to);
    return 0;
 }
 
@@ -138,6 +135,8 @@ hash_insert(T *json,const char *key,T value)
     if(!(key=strdup(key))) return 1;
     llst_T head=llst_new(key,value,(*json)->hashtab[pos]);
     if(!head) return 1;
+    *((*json)->inorder_tail)=head;
+    (*json)->inorder_tail=&head->next_inorder;
     (*json)->hashtab[pos]=head;
     (*json)->have++;
     (*json)->sz=sz;
@@ -149,7 +148,7 @@ llst_new(const char *key ,T value,llst_T tail)
 {
     llst_T lst=EMALLOC(sizeof(*lst));
     if(!lst) return NULL;
-    *lst=(struct llst){key,value,tail};
+    *lst=(struct llst){key,value,tail,NULL};
     return lst;
 }
 
