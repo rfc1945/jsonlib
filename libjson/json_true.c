@@ -4,38 +4,18 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
 #define T json_T
+struct json{int type;};
 static const char *keyword="true";
-struct json{
-    int type;
-    json_C class;
-};
+static const struct json
+JSON_TRUE_P={JSON_TRUE};
 
-/* Class Methods */
-static T new_true(void);
-static T fscan_true(FILE *from);
-static int fprint_true(FILE *to,T this);
-/*---------------*/
+extern T
+new_true(void){return &JSON_TRUE_P;}
 
-struct json_C
-JSON_TRUE_T=
-{
-    new_true,
-    fscan_true,
-    fprint_true,
-    NULL,
-    NULL,
-    NULL
-};
-
-static struct json
-JSON_TRUE_PROTO={JSON_TRUE,&JSON_TRUE_T};
-
-static T
-new_true(void){return &JSON_TRUE_PROTO;}
-
-static T
+extern T
 fscan_true(FILE *from)
 {
     char tmp[5];
@@ -45,10 +25,10 @@ fscan_true(FILE *from)
         EPRINTF("expected '%s'",keyword);
         return NULL;
     }
-    return &JSON_TRUE_PROTO;
+    return &JSON_TRUE_P;
 }
 
-static int
+extern int
 fprint_true(FILE *to,T this)
 {
     assert(to && this);

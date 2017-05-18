@@ -4,45 +4,28 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
 #define T json_T
-#define INITIAL 64
-#define INCR 2
-
 struct json{
     int type;
-    json_C class;
     size_t len;
     char  buf[];
 };
 
-/* Class Methods */
-static T new_str(void);
-static T fscan_str(FILE *from);
-static int fprint_str(FILE *to,T this);
-static int get_str(T this,va_list *args);
-/*---------------*/
+#define INITIAL 64
+#define INCR 2
 
-struct json_C
-JSON_STR_T=
-{
-    new_str,
-    fscan_str,
-    fprint_str,
-    NULL,
-    get_str
-};
-
-static T new_str(void)
+extern T new_str(void)
 {
     T res=EMALLOC(sizeof(*res)+INITIAL);
     if(!res) return NULL;
-    *res=(struct json){JSON_STR,&JSON_STR_T,0};
+    *res=(struct json){JSON_STR,0};
     res->buf[0]='\0';
     return res;
 }
 
-static T fscan_str(FILE *from)
+extern T fscan_str(FILE *from)
 {
     json_T res=new_str();
     if(!res) return NULL;
@@ -69,11 +52,42 @@ static T fscan_str(FILE *from)
     return realloc(res,sizeof(*res)+(res->len=len)+1);
 }
 
-static int fprint_str(FILE *to,T this){
+extern T
+sscan_str(const char **str)
+{
+    json_T res=new_str();
+    if(!res) return NULL;
+    assert(*(*str)++=='\"');
+    size_t len=0,sz=INITIAL;
+    for(int c; **str!='\"'; ++*str){
+        if(!(c=**str)){
+            EPRINTF("no closing '\"' found...\n");
+            break;
+        }
+        if(len+1 >= sz){
+            sz*=INCR;
+            if(EREALLOC(&res,sizeof(*res)+sz))
+                break;
+        }
+        if(c=='\\'){
+            if((*str)[1]=='"') c='"', ++*str;
+            else if((*str)[1]!='\\') c='\\';
+        }
+        res->buf[len++]=c;
+    }
+    ++*str;
+    res->buf[len]='\0';
+    return realloc(res,sizeof(*res)+(res->len=len)+1);
+}
+
+extern int
+fprint_str(FILE *to,T this)
+{
     return fprintf(to,"\"%s\"",this->buf);
 }
 
-static int get_str(T this,va_list *args)
+extern int
+get_str(T this,va_list *args)
 {
     assert(this);
     const char **str=va_arg(*args,const char **);

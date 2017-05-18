@@ -4,41 +4,17 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
 #define T json_T
+struct json{int type};
+static const char *keyword="null";
+static const struct json JSON_NULL_P={JSON_NULL};
 
-struct json{
-    int type;
-    json_C class;
-};
+extern T
+new_null(void){return &JSON_NULL_P;}
 
-/* Class Methods */
-static T new_null(void);
-static T fscan_null(FILE *from);
-static int fprint_null(FILE *to,T this);
-/*---------------*/
-
-struct json_C
-JSON_NULL_T=
-{
-    new_null,
-    fscan_null,
-    fprint_null,
-    NULL,
-    NULL,
-    NULL
-};
-
-static struct json
-JSON_NULL_PROTO={JSON_NULL,&JSON_NULL_T};
-
-static T
-new_null(void)
-{
-    return &JSON_NULL_PROTO;
-}
-
-static T
+extern T
 fscan_null(FILE *from)
 {
     char tmp[5];
@@ -48,12 +24,27 @@ fscan_null(FILE *from)
         EPRINTF("expected 'null'");
         return NULL;
     }
-    return &JSON_NULL_PROTO;
+    return &JSON_NULL_P;
 }
 
-static int
+extern T
+sscan_null(const char **str)
+{
+    char tmp[5];
+    int read=0;
+    if(sscanf(*str,"%4s%n",tmp,&read)!=1 ||
+       strcmp(keyword,tmp))
+    {
+        EPRINTF("expected 'null'");
+        return NULL;
+    }
+    (*str)+=read;
+    return &JSON_NULL_P;
+}
+
+extern int
 fprint_null(FILE *to,T this)
 {
-    assert(to && this);
+    assert(to);
     return fputs("null",to);
 }

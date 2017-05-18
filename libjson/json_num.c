@@ -4,42 +4,21 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
 #define T json_T
+struct json{int type;double val};
 
-struct json{
-    int type;
-    json_C class;
-    double val;
-};
-
-/* Class Methods */
-static T new_num(void);
-static T fscan_num(FILE *from);
-static int fprint_num(FILE *to,T this);
-static int get_num(T this,va_list *args);
-/*---------------*/
-
-struct json_C
-JSON_NUM_T=
-{
-    new_num,
-    fscan_num,
-    fprint_num,
-    NULL,
-    get_num
-};
-
-static T
+extern T
 new_num(void)
 {
     T res=EMALLOC(sizeof(*res));
     if(!res) return NULL;
-    *res=(struct json){JSON_NUM,&JSON_NUM_T,0.};
+    *res=(struct json){JSON_NUM,0.};
     return res;
 }
 
-static T
+extern T
 fscan_num(FILE *from)
 {
     assert(from);
@@ -53,14 +32,30 @@ fscan_num(FILE *from)
     return res;
 }
 
-static int
+extern T sscan_num(const char **str)
+{
+    T res=new_num();
+    if(!res) return NULL;
+    int read=0;
+    if(sscanf(*str,"%lf%n",&res->val,&read)!=1){
+        EPRINTF("bad format, expected real number.");
+        json_free(res);
+        return NULL;
+    }
+    (*str)+=read;
+    return res;
+}
+
+extern int
 fprint_num(FILE *to,T this)
 {
     assert(to && this);
     return fprintf(to,"%g",this->val);
 }
 
-static int get_num(T this,va_list *args){
+extern int
+get_num(T this,va_list *args)
+{
     assert(this);
     double *px=va_arg(*args,double *);
     *px=this->val;

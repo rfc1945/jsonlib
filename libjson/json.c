@@ -6,36 +6,46 @@
 #include <ctype.h>
 #include <err/err.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
 #define T json_T
+struct json{int type;};
 
-struct json{
-    int type;
-    json_C class;
-};
-
-/*-------------Classes--------------*/
-extern struct json_C JSON_NUM_T;
-extern struct json_C JSON_STR_T;
-extern struct json_C JSON_ARR_T;
-extern struct json_C JSON_OBJ_T;
-extern struct json_C JSON_NULL_T;
-extern struct json_C JSON_TRUE_T;
-extern struct json_C JSON_FALSE_T;
-/*----------------------------------*/
-
-static const json_C
-CLASS_TAB[JSON_NTYPES]=
-/* Used to get class structure by id */
+static const new_ NEW_TAB[]=
 {
-    [JSON_NUM]=&JSON_NUM_T,
-    [JSON_STR]=&JSON_STR_T,
-    [JSON_ARR]=&JSON_ARR_T,
-    [JSON_OBJ]=&JSON_OBJ_T,
-    [JSON_NULL]=&JSON_NULL_T,
-    [JSON_TRUE]=&JSON_TRUE_T,
-    [JSON_FALSE]=&JSON_FALSE_T
+      [JSON_NUM]= new_num, [JSON_STR]= new_str, [JSON_ARR]= new_arr,
+      [JSON_OBJ]= new_obj,[JSON_NULL]=new_null,[JSON_TRUE]=new_true,
+    [JSON_FALSE]=new_false
 };
+
+static const sscan_ SSCAN_TAB[]=
+{
+      [JSON_NUM]= sscan_num, [JSON_STR]= sscan_str, [JSON_ARR]= sscan_arr,
+      [JSON_OBJ]= sscan_obj,[JSON_NULL]=sscan_null,[JSON_TRUE]=NULL,
+    [JSON_FALSE]=NULL
+};
+
+static const fscan_ FSCAN_TAB[]=
+{
+      [JSON_NUM]= fscan_num, [JSON_STR]= fscan_str, [JSON_ARR]= fscan_arr,
+      [JSON_OBJ]= fscan_obj,[JSON_NULL]=fscan_null,[JSON_TRUE]=fscan_true,
+    [JSON_FALSE]=fscan_false
+};
+
+static const fprint_ FPRINT_TAB[]=
+{
+      [JSON_NUM]= fprint_num, [JSON_STR]= fprint_str, [JSON_ARR]= fprint_arr,
+      [JSON_OBJ]= fprint_obj,[JSON_NULL]=fprint_null,[JSON_TRUE]=fprint_true,
+    [JSON_FALSE]=fprint_false
+};
+
+static const get_ GET_TAB[]=
+{
+      [JSON_NUM]= get_num, [JSON_STR]= get_str, [JSON_ARR]= get_arr,
+      [JSON_OBJ]= get_obj,[JSON_NULL]=    NULL,[JSON_TRUE]=    NULL,
+    [JSON_FALSE]= NULL
+};
+
 
 static const int
 GUESS_TAB[256]=
@@ -60,9 +70,27 @@ json_fscan(FILE *from)
         EPRINTF("No JSON type found that matches char '%c'\n",c);
         return NULL;
     }
-    T json=(CLASS_TAB[type]->fscan)(from);
+    T json=FSCAN_TAB[type](from);
     if(!json)
         EPRINTF("Error parsing JSON file...\n");
+    return json;
+}
+
+extern T
+json_sscan(const char **str)
+{
+    assert(str && *str);
+    while(isspace(**str))(*str)++;
+    if(!(*str)[1]) return NULL;
+    int type=GUESS_TAB[(unsigned char)(**str)];
+    if(type==JSON_NO_TYPE){
+        EPRINTF("No JSON type found that matches char '%c'",
+                (*str)[1]);
+        return NULL;
+    }
+    T json=SSCAN_TAB[type](str);
+    if(!json)
+        EPRINTF("Error parsing JSON string");
     return json;
 }
 
@@ -70,24 +98,22 @@ extern T
 json_new(int type)
 {
     assert("Unknown JSON type" && type>0 && type<JSON_NTYPES);
-    assert(CLASS_TAB[type]);
-    return CLASS_TAB[type]->new();
+    return NEW_TAB[type]();
 }
 
 extern int json_fprint(FILE *to,T json){
     assert(json && to);
-    return ((json->class)->fprint)(to,json);
+    return FPRINT_TAB[json->type](to,json);
 }
+
 
 extern int json_get(T json,...)
 {
     assert(json);
-    if(!json->class->get)
-        return 0;
     va_list args;
     int got=0;
     va_start(args,json);
-	got=(json->class->get)(json,&args);
+        got=GET_TAB[json->type](json,&args);
 	va_end(args);
     return got;
 }
@@ -96,10 +122,11 @@ extern int json_get(T json,...)
 //extern T json_set(T json,...);
 
 extern void json_free(T json){
-    assert(json);
-    if(json->class->free)
-        (json->class->free)(json);
-    free(json);
+//    assert(json);
+//    if(json->class->free)
+//        (json->class->free)(json);
+//    free(json);
 }
+
 
 #undef T

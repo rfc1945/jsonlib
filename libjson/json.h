@@ -26,9 +26,11 @@ struct json_C{
     void (*free)(T this);
     int (*get)(T this,va_list *args);
     int (*set)(T this,va_list *args);
+    T (*sscan)(const char **str);
 };
 
 extern T   json_fscan(FILE *from);
+extern T   json_sscan(const char **str);
 extern int json_fprint(FILE *to,T json);
 extern T json_new(int type);
 extern int json_get(T json,...);

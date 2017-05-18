@@ -3,48 +3,33 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 #include <libjson/json.h>
+#include <libjson/json_common.h>
 
+#define T json_T
 struct json{
     int type;
-    json_C class;
     size_t len;
     json_T buf[];
 };
 
-#define T json_T
 #define INITIAL 256
 #define INCR 1.5
 
-/* Class Methods */
-static T new_arr(void);
-static T fscan_arr(FILE *from);
-static int fprint_arr(FILE *to,T this);
-static void free_arr(T this);
-static int get_arr(T this,va_list *args);
-/* */
-
-struct json_C
-JSON_ARR_T=
-{
-    new_arr,
-    fscan_arr,
-    fprint_arr,
-    free_arr,
-    get_arr
-};
-
-/*-------Methods-------*/
-
-static T new_arr(void){
+extern T
+new_arr(void){
     json_T res=EMALLOC(sizeof(*res)+sizeof(T)*INITIAL);
     if(!res) return NULL;
-    *res=(struct json){JSON_ARR,&JSON_ARR_T,0};
+    res->type=JSON_ARR;
+    res->len=0;
     res->buf[0]=NULL;
     return res;
 }
 
-static T fscan_arr(FILE *from){
+extern T
+fscan_arr(FILE *from)
+{
     size_t len=0,sz=INITIAL;
     T res=new_arr();
     if(!res) return NULL;
@@ -72,7 +57,41 @@ skip_loop:
     return realloc(res,sizeof(*res)+sizeof(T)*len);
 }
 
-static int fprint_arr(FILE *to,T this){
+extern T
+sscan_arr(const char **str)
+/** Takes a
+ *
+ */
+{
+    size_t len=0,sz=INITIAL;
+    T res=new_arr();
+    if(!res) return NULL;
+    assert(**str=='[');
+    while(isspace(*(++*str)));
+    if(**str==']') goto skip_loop;
+    for(;;++*str){
+        if(!**str){EPRINTF("expected ']' or JSON type");break;}
+        if(len>=sz){
+            if(EREALLOC(&res,sizeof(*res)+sizeof(T)*(sz*=INCR)))
+                break;
+        }
+        if(!(res->buf[len++]=json_sscan(str)))
+            {len--;break;}
+        while(isspace(**str)) ++*str;
+        if(**str!=','){
+            if(**str!=']') EPRINTF("expected ',' or ']'");
+            break;
+        }
+    }
+skip_loop:
+    ++*str;
+    res->len=len;
+    return realloc(res,sizeof(*res)+sizeof(T)*len);
+}
+
+extern int
+fprint_arr(FILE *to,T this)
+{
    putchar('[');
    size_t len=this->len;
    for(size_t i=0;i<len;i++){
@@ -83,7 +102,8 @@ static int fprint_arr(FILE *to,T this){
    return 0;
 }
 
-static void free_arr(T this)
+extern void
+free_arr(T this)
 {
     assert(this);
     size_t n=this->len;
@@ -91,7 +111,9 @@ static void free_arr(T this)
         json_free(this->buf[i]);
 }
 
-static int get_arr(T this,va_list *args){
+extern int
+get_arr(T this,va_list *args)
+{
     assert(this);
     size_t i=va_arg(*args,size_t);
     if(i>=this->len){EPRINTF("array index out of bounds");return 0;}
